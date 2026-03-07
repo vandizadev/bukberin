@@ -1,7 +1,5 @@
 # 🌙 Bukberin — AI-Powered Bukber Organizer
 
-![Bukberin Banner](https://via.placeholder.com/1200x600?text=Bukberin+-+Atur+Bukber+Tanpa+Ribet) 
-*(Catatan: Kamu bisa mengganti URL gambar di atas dengan screenshot aplikasimu nanti)*
 
 **Bukberin** adalah aplikasi *micro-SaaS* inovatif yang dirancang khusus untuk menghilangkan "drama" kepanitiaan Buka Bersama (Bukber). Dari menentukan tanggal, memilih tempat, hingga menagih uang patungan—semuanya diotomatisasi dengan kecerdasan buatan (AI) dan integrasi pembayaran instan.
 
@@ -35,7 +33,7 @@ Jika Anda juri atau *developer* yang ingin mencoba menjalankan Bukberin di mesin
 
 1. **Clone Repository**
    ```bash
-   git clone [https://github.com/username/bukberin-app.git](https://github.com/username/bukberin-app.git)
+   git clone [https://github.com/vandizadev/bukberin-app.git](https://github.com/vandizadev/bukberin-app.git)
    cd bukberin-app
 
     Install Dependencies
