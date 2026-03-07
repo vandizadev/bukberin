@@ -1,0 +1,120 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider     = "mysql"
+  url          = env("DATABASE_URL")
+  relationMode = "prisma"
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  events       Event[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Event {
+  id              String      @id @default(cuid())
+  slug            String      @unique
+  name            String
+  description     String      @db.Text
+  budgetPerPerson Int
+  status          EventStatus @default(OPEN)
+  organizerId     String
+  organizer       User        @relation(fields: [organizerId], references: [id])
+  participants    Participant[]
+  voteOptions     VoteOption[]
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@index([slug])
+  @@index([organizerId])
+  @@map("events")
+}
+
+enum EventStatus {
+  DRAFT
+  OPEN
+  VOTING_CLOSED
+  COMPLETED
+  CANCELLED
+}
+
+model Participant {
+  id        String   @id @default(cuid())
+  name      String
+  email     String?
+  phone     String?
+  eventId   String
+  event     Event    @relation(fields: [eventId], references: [id])
+  votes     Vote[]
+  payment   Payment?
+  createdAt DateTime @default(now())
+
+  @@unique([eventId, phone])
+  @@index([eventId])
+  @@map("participants")
+}
+
+model VoteOption {
+  id        String   @id @default(cuid())
+  type      VoteType
+  label     String
+  eventId   String
+  event     Event    @relation(fields: [eventId], references: [id])
+  votes     Vote[]
+  createdAt DateTime @default(now())
+
+  @@index([eventId, type])
+  @@map("vote_options")
+}
+
+enum VoteType {
+  DATE
+  LOCATION
+}
+
+model Vote {
+  id            String      @id @default(cuid())
+  participantId String
+  participant   Participant @relation(fields: [participantId], references: [id])
+  voteOptionId  String
+  voteOption    VoteOption  @relation(fields: [voteOptionId], references: [id])
+  createdAt     DateTime    @default(now())
+
+  @@unique([participantId, voteOptionId])
+  @@index([participantId])
+  @@index([voteOptionId])
+  @@map("votes")
+}
+
+model Payment {
+  id                 String        @id @default(cuid())
+  amount             Int
+  status             PaymentStatus @default(PENDING)
+  mayarCheckoutUrl   String?       @db.Text
+  mayarTransactionId String?       @unique
+  participantId      String        @unique
+  participant        Participant   @relation(fields: [participantId], references: [id])
+  paidAt             DateTime?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  @@index([status])
+  @@index([participantId])
+  @@map("payments")
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  EXPIRED
+}

@@ -9,17 +9,31 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@prisma/client": "^6",
+    "bcryptjs": "^2.4.3",
+    "clsx": "^2",
+    "dotenv": "^17.3.1",
+    "lucide-react": "^0.475",
     "next": "16.1.6",
+    "next-auth": "5.0.0-beta.25",
+    "next-themes": "^0.4.6",
+    "openai": "^4",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-day-picker": "^9",
+    "react-dom": "19.2.3",
+    "sonner": "^2",
+    "tailwind-merge": "^3",
+    "zod": "^3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
+    "prisma": "^6",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
