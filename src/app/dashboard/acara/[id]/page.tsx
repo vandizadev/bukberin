@@ -65,7 +65,7 @@ export default async function EventDetailPage({ params }: Props) {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="card p-6 bg-gradient-to-br from-amber-50 to-violet-50 border border-amber-200/50">
+            <div className="card p-6 border-l-4 border-l-[var(--color-primary)]">
                 <div className="flex flex-col sm:flex-row items-start justify-between gap-4 relative">
                     <div>
                         <h1 className="text-2xl font-bold mb-1">{event.name}</h1>
