@@ -37,11 +37,6 @@ export function validateEnv() {
         }
 
         // Production safety checks
-        if (process.env.MAYAR_API_KEY?.startsWith("mock-key")) {
-            console.warn(
-                "⚠️  MAYAR_API_KEY is set to mock mode. Payment will NOT work in production!"
-            );
-        }
 
         if (process.env.NEXTAUTH_SECRET === "your-super-secret-key-change-this") {
             throw new Error(

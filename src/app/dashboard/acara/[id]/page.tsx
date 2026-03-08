@@ -7,13 +7,12 @@ import {
     MapPin,
     Users,
     Wallet,
-    Copy,
     CheckCircle2,
     Clock,
     XCircle,
-    ExternalLink,
 } from "lucide-react";
 import CopyLinkButton from "./copy-link";
+import EventActions from "./event-actions";
 
 interface Props {
     params: Promise<{ id: string }>;
@@ -67,10 +66,10 @@ export default async function EventDetailPage({ params }: Props) {
         <div className="space-y-6">
             {/* Header */}
             <div className="card p-6 bg-gradient-to-br from-amber-50 to-violet-50 border border-amber-200/50">
-                <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+                <div className="flex flex-col sm:flex-row items-start justify-between gap-4 relative">
                     <div>
                         <h1 className="text-2xl font-bold mb-1">{event.name}</h1>
-                        <p className="text-sm text-[var(--text-muted)] mb-3 line-clamp-2">
+                        <p className="text-sm text-[var(--text-muted)] mb-3 line-clamp-2 pr-8 sm:pr-0">
                             {event.description}
                         </p>
                         <div className="flex flex-wrap gap-3 text-sm">
@@ -86,7 +85,16 @@ export default async function EventDetailPage({ params }: Props) {
                         </div>
                     </div>
 
-                    <CopyLinkButton link={publicLink} />
+                    <div className="flex items-center gap-2 self-end sm:self-start w-full sm:w-auto justify-end mt-2 sm:mt-0">
+                        <CopyLinkButton link={publicLink} />
+                        <EventActions event={{
+                            id: event.id,
+                            name: event.name,
+                            description: event.description,
+                            budgetPerPerson: event.budgetPerPerson,
+                            status: event.status
+                        }} />
+                    </div>
                 </div>
             </div>
 

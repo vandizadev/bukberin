@@ -1,3 +1,4 @@
+import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { formatRupiah, formatDate } from "@/lib/utils";
@@ -5,6 +6,27 @@ import PublicEventClient from "./client";
 
 interface Props {
     params: Promise<{ slug: string }>;
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+    const { slug } = await params;
+    const event = await prisma.event.findFirst({
+        where: { OR: [{ slug }, { id: slug }] },
+    });
+
+    if (!event) return { title: "Acara Tidak Ditemukan - Bukberin" };
+
+    return {
+        title: `${event.name} | Bukberin`,
+        description: event.description.substring(0, 160),
+        openGraph: {
+            title: event.name,
+            description: event.description.substring(0, 160),
+            siteName: "Bukberin",
+            locale: "id_ID",
+            type: "website",
+        },
+    };
 }
 
 export default async function PublicEventPage({ params }: Props) {

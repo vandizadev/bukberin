@@ -8,6 +8,7 @@ interface CreateCheckoutParams {
     customerName: string;
     customerEmail?: string;
     customerPhone?: string;
+    mayarApiKey: string;
 }
 
 interface CheckoutResult {
@@ -15,11 +16,11 @@ interface CheckoutResult {
     transactionId: string;
 }
 
-const MAYAR_API_KEY = process.env.MAYAR_API_KEY || "";
 const MAYAR_API_URL = process.env.MAYAR_API_URL || "https://api.mayar.id/hl/v1";
 
-export function isMockMode(): boolean {
-    return !MAYAR_API_KEY || MAYAR_API_KEY.startsWith("mock-key");
+export function isMockMode(apiKey?: string): boolean {
+    // If no key is provided, or it's explicitly a mock key, use mock mode
+    return !apiKey || apiKey.startsWith("mock-key");
 }
 
 export async function createCheckoutLink(
@@ -31,7 +32,7 @@ export async function createCheckoutLink(
     }
 
     // Mock mode for development without Mayar account
-    if (isMockMode()) {
+    if (isMockMode(params.mayarApiKey)) {
         const fakeTransactionId = `mock_txn_${Date.now()}_${Math.random()
             .toString(36)
             .substring(2, 8)}`;
@@ -53,10 +54,10 @@ export async function createCheckoutLink(
     const timeout = setTimeout(() => controller.abort(), 15000); // 15s timeout
 
     try {
-        const response = await fetch(`${MAYAR_API_URL}/checkout_page/create`, {
+        const response = await fetch(`${MAYAR_API_URL}/payment/create`, {
             method: "POST",
             headers: {
-                Authorization: `Bearer ${MAYAR_API_KEY}`,
+                Authorization: `Bearer ${params.mayarApiKey}`,
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({
@@ -64,11 +65,9 @@ export async function createCheckoutLink(
                 amount: params.amount,
                 description: params.description.substring(0, 500),
                 redirectUrl: params.redirectUrl,
-                customer: {
-                    name: params.customerName.substring(0, 100),
-                    email: params.customerEmail,
-                    phone: params.customerPhone,
-                },
+                customerName: params.customerName.substring(0, 100),
+                email: params.customerEmail || "peserta@bukberin.local",
+                mobile: params.customerPhone || "080000000000",
             }),
             signal: controller.signal,
         });
@@ -96,15 +95,16 @@ export async function createCheckoutLink(
 
 export function verifyWebhookSignature(
     payload: string,
-    signature: string
+    signature: string,
+    webhookSecret: string
 ): boolean {
-    if (isMockMode()) return true;
+    // If webhookSecret is explicitly a mock, skip verification
+    if (isMockMode(webhookSecret)) return true;
 
-    const secret = process.env.MAYAR_WEBHOOK_SECRET || "";
-    if (!secret || !signature) return false;
+    if (!webhookSecret || !signature) return false;
 
     try {
-        const expectedSignature = createHmac("sha256", secret)
+        const expectedSignature = createHmac("sha256", webhookSecret)
             .update(payload)
             .digest("hex");
 

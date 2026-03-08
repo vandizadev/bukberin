@@ -3,11 +3,13 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useTheme } from "next-themes";
-import { Menu, X, Sun, Moon } from "lucide-react";
+import { Menu, X, Sun, Moon, LogOut } from "lucide-react";
+import { useSession, signOut } from "next-auth/react";
 
 export default function Navbar() {
     const [open, setOpen] = useState(false);
     const { theme, setTheme } = useTheme();
+    const { data: session, status } = useSession();
 
     return (
         <nav className="fixed top-0 left-0 right-0 z-50 glass">
@@ -35,9 +37,27 @@ export default function Navbar() {
                         <Link href="/buat-acara" className="btn btn-primary">
                             ✨ Buat Acara
                         </Link>
-                        <Link href="/auth/login" className="btn btn-ghost">
-                            Masuk
-                        </Link>
+
+                        {status === "loading" ? (
+                            <div className="w-20 h-8 bg-white/5 animate-pulse rounded-full" />
+                        ) : session ? (
+                            <>
+                                <Link href="/dashboard" className="btn btn-ghost hover:bg-[var(--bg-muted)]">
+                                    Dashboard
+                                </Link>
+                                <Link href="/dashboard/settings" className="btn btn-ghost hover:bg-[var(--bg-muted)]">
+                                    ⚙️ Pengaturan
+                                </Link>
+                                <button onClick={() => signOut()} className="btn btn-ghost text-red-500 hover:bg-red-500/10 hover:text-red-600 transition-colors">
+                                    <LogOut className="w-4 h-4 rounded-full mr-1" />
+                                    Keluar
+                                </button>
+                            </>
+                        ) : (
+                            <Link href="/auth/login" className="btn btn-ghost">
+                                Masuk
+                            </Link>
+                        )}
                     </div>
 
                     {/* Mobile */}
@@ -68,9 +88,24 @@ export default function Navbar() {
                         <Link href="/buat-acara" className="block btn btn-primary w-full text-center" onClick={() => setOpen(false)}>
                             ✨ Buat Acara
                         </Link>
-                        <Link href="/auth/login" className="block btn btn-ghost w-full text-center" onClick={() => setOpen(false)}>
-                            Masuk
-                        </Link>
+
+                        {status === "authenticated" ? (
+                            <>
+                                <Link href="/dashboard" className="block btn btn-ghost w-full text-left" onClick={() => setOpen(false)}>
+                                    Dashboard
+                                </Link>
+                                <Link href="/dashboard/settings" className="block btn btn-ghost w-full text-left" onClick={() => setOpen(false)}>
+                                    ⚙️ Pengaturan
+                                </Link>
+                                <button onClick={() => { signOut(); setOpen(false); }} className="block btn btn-ghost w-full text-left text-red-500">
+                                    Keluar
+                                </button>
+                            </>
+                        ) : status === "unauthenticated" && (
+                            <Link href="/auth/login" className="block btn btn-ghost w-full text-center" onClick={() => setOpen(false)}>
+                                Masuk
+                            </Link>
+                        )}
                     </div>
                 </div>
             )}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
     Calendar,
     MapPin,
@@ -42,6 +42,7 @@ export default function PublicEventClient({
     const [participantId, setParticipantId] = useState("");
     const [loading, setLoading] = useState(false);
     const [payLoading, setPayLoading] = useState(false);
+    const [isRestored, setIsRestored] = useState(false); // To handle hydration mismatch
 
     const [joinForm, setJoinForm] = useState({ name: "", phone: "" });
     const [selectedDate, setSelectedDate] = useState("");
@@ -55,6 +56,30 @@ export default function PublicEventClient({
         ...localLocationOptions.map((l) => l.voteCount),
         1
     );
+
+    // Restore Participant Session from localStorage
+    useEffect(() => {
+        const savedSession = localStorage.getItem(`bukberin_session_${eventId}`);
+        if (savedSession) {
+            try {
+                const parsed = JSON.parse(savedSession);
+                if (parsed.participantId && parsed.phase) {
+                    setParticipantId(parsed.participantId);
+                    setPhase(parsed.phase);
+                }
+            } catch (e) {
+                console.error("Failed to parse saved session", e);
+            }
+        }
+        setIsRestored(true);
+    }, [eventId]);
+
+    const saveSession = (pId: string, currentPhase: string) => {
+        localStorage.setItem(`bukberin_session_${eventId}`, JSON.stringify({
+            participantId: pId,
+            phase: currentPhase
+        }));
+    };
 
     const handleJoin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -72,6 +97,7 @@ export default function PublicEventClient({
             }
             setParticipantId(data.id);
             setPhase("vote");
+            saveSession(data.id, "vote");
             toast.success("Berhasil terdaftar! Sekarang vote pilihanmu 🗳️");
         } catch {
             toast.error("Terjadi kesalahan");
@@ -115,6 +141,7 @@ export default function PublicEventClient({
             );
 
             setPhase("done");
+            saveSession(participantId, "done");
             toast.success("Vote berhasil disimpan! ✅");
         } catch {
             toast.error("Terjadi kesalahan");
@@ -146,6 +173,14 @@ export default function PublicEventClient({
             setPayLoading(false);
         }
     };
+
+    if (!isRestored) {
+        return (
+            <div className="flex items-center justify-center p-12">
+                <Loader2 className="w-8 h-8 animate-spin text-[var(--color-primary)]" />
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6">

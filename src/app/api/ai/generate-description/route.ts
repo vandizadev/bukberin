@@ -2,11 +2,31 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { generateEventDescription } from "@/lib/openai";
 
+const rateLimit = new Map<string, { count: number; resetAt: number }>();
+const MAX_REQUESTS = 5;
+const WINDOW_MS = 60 * 60 * 1000; // 1 hr
+
 export async function POST(req: NextRequest) {
     try {
         const session = await auth();
         if (!session?.user?.id) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
+        const userId = session.user.id;
+        const now = Date.now();
+        const userLimit = rateLimit.get(userId);
+
+        if (userLimit && now < userLimit.resetAt) {
+            if (userLimit.count >= MAX_REQUESTS) {
+                return NextResponse.json(
+                    { error: "Limit penggunaan AI tercapai. Coba lagi dalam 1 jam." },
+                    { status: 429 }
+                );
+            }
+            userLimit.count++;
+        } else {
+            rateLimit.set(userId, { count: 1, resetAt: now + WINDOW_MS });
         }
 
         const body = await req.json();

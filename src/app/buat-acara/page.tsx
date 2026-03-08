@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Navbar from "@/components/layout/navbar";
 import Footer from "@/components/layout/footer";
+import { useSession } from "next-auth/react";
 import {
     Moon,
     Sparkles,
@@ -23,9 +24,11 @@ import { formatRupiah } from "@/lib/utils";
 
 export default function BuatAcaraPage() {
     const router = useRouter();
+    const { status } = useSession();
     const [step, setStep] = useState(1);
     const [loading, setLoading] = useState(false);
     const [aiLoading, setAiLoading] = useState(false);
+    const [checkingSetup, setCheckingSetup] = useState(true);
 
     const [form, setForm] = useState({
         name: "",
@@ -34,6 +37,27 @@ export default function BuatAcaraPage() {
         dateOptions: [""] as string[],
         locationOptions: [""] as string[],
     });
+
+    useEffect(() => {
+        if (status === "unauthenticated") {
+            toast.error("Silakan login terlebih dahulu untuk membuat acara 🔒");
+            router.push("/auth/login");
+        } else if (status === "authenticated") {
+            fetch("/api/user/settings")
+                .then((res) => res.json())
+                .then((data) => {
+                    if (!data.mayarApiKey || !data.mayarWebhookSecret) {
+                        toast.error("Mohon atur integrasi pembayaran Mayar Anda terlebih dahulu di Pengaturan 💳");
+                        router.push("/dashboard/settings");
+                    } else {
+                        setCheckingSetup(false);
+                    }
+                })
+                .catch(() => {
+                    setCheckingSetup(false);
+                });
+        }
+    }, [status, router]);
 
     const handleAIGenerate = async () => {
         if (!form.name) {
@@ -120,6 +144,24 @@ export default function BuatAcaraPage() {
             setLoading(false);
         }
     };
+
+    if (status === "loading" || (status === "authenticated" && checkingSetup)) {
+        return (
+            <div className="min-h-screen flex flex-col">
+                <Navbar />
+                <main className="flex-1 pt-24 pb-16 flex items-center justify-center">
+                    <div className="flex flex-col items-center gap-4 text-[var(--color-primary)]">
+                        <Loader2 className="w-10 h-10 animate-spin" />
+                        <p className="font-medium animate-pulse">Memeriksa persyaratan akun...</p>
+                    </div>
+                </main>
+                <Footer />
+            </div>
+        );
+    }
+
+    // Prevents unauthenticated users from seeing the form briefly before redirect
+    if (status === "unauthenticated") return null;
 
     return (
         <div className="min-h-screen flex flex-col">
@@ -266,6 +308,7 @@ export default function BuatAcaraPage() {
                                                     type="date"
                                                     className="input flex-1"
                                                     value={date}
+                                                    min={new Date().toISOString().split("T")[0]} // Prevent past dates
                                                     onChange={(e) => {
                                                         const newDates = [...form.dateOptions];
                                                         newDates[i] = e.target.value;
@@ -368,18 +411,18 @@ export default function BuatAcaraPage() {
                                     Preview Acara
                                 </h2>
 
-                                <div className="space-y-4 p-4 bg-amber-50 rounded-xl border border-amber-200/50">
+                                <div className="space-y-4 p-4 bg-amber-50 rounded-xl border border-amber-200/50 text-amber-950">
                                     <div>
-                                        <span className="text-xs text-[var(--text-muted)] uppercase tracking-wider font-semibold">Nama Acara</span>
+                                        <span className="text-xs text-amber-700/70 uppercase tracking-wider font-semibold">Nama Acara</span>
                                         <p className="font-bold text-lg">{form.name}</p>
                                     </div>
                                     <div>
-                                        <span className="text-xs text-[var(--text-muted)] uppercase tracking-wider font-semibold">Deskripsi</span>
+                                        <span className="text-xs text-amber-700/70 uppercase tracking-wider font-semibold">Deskripsi</span>
                                         <p className="text-sm">{form.description}</p>
                                     </div>
                                     <div className="flex gap-6">
                                         <div>
-                                            <span className="text-xs text-[var(--text-muted)] uppercase tracking-wider font-semibold flex items-center gap-1">
+                                            <span className="text-xs text-amber-700/70 uppercase tracking-wider font-semibold flex items-center gap-1">
                                                 <Wallet className="w-3 h-3" />
                                                 Budget/Orang
                                             </span>
@@ -390,7 +433,7 @@ export default function BuatAcaraPage() {
                                     </div>
                                     <div className="grid sm:grid-cols-2 gap-4">
                                         <div>
-                                            <span className="text-xs text-[var(--text-muted)] uppercase tracking-wider font-semibold flex items-center gap-1">
+                                            <span className="text-xs text-amber-700/70 uppercase tracking-wider font-semibold flex items-center gap-1">
                                                 <Calendar className="w-3 h-3" />
                                                 Opsi Tanggal
                                             </span>
@@ -405,7 +448,7 @@ export default function BuatAcaraPage() {
                                             </ul>
                                         </div>
                                         <div>
-                                            <span className="text-xs text-[var(--text-muted)] uppercase tracking-wider font-semibold flex items-center gap-1">
+                                            <span className="text-xs text-amber-700/70 uppercase tracking-wider font-semibold flex items-center gap-1">
                                                 <MapPin className="w-3 h-3" />
                                                 Opsi Lokasi
                                             </span>

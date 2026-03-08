@@ -11,6 +11,19 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
+        // Validate Organizer has Mayar Keys setup
+        const organizer = await prisma.user.findUnique({
+            where: { id: session.user.id },
+            select: { mayarApiKey: true, mayarWebhookSecret: true }
+        });
+
+        if (!organizer?.mayarApiKey || !organizer?.mayarWebhookSecret) {
+            return NextResponse.json(
+                { error: "Anda harus mengatur Mayar API Key & Webhook Secret di halaman Pengaturan sebelum membuat acara." },
+                { status: 403 }
+            );
+        }
+
         const body = await req.json();
         const parsed = createEventSchema.safeParse(body);
 

@@ -29,7 +29,11 @@ export async function POST(
         const participant = await prisma.participant.findFirst({
             where: { id: participantId, eventId },
             include: {
-                event: true,
+                event: {
+                    include: {
+                        organizer: true,
+                    },
+                },
                 payment: true,
             },
         });
@@ -45,6 +49,16 @@ export async function POST(
         if (participant.event.status === "CANCELLED") {
             return NextResponse.json(
                 { error: "Acara sudah dibatalkan" },
+                { status: 400 }
+            );
+        }
+
+        // Note: Fallback to process.env.MAYAR_API_KEY only if you want to support existing events without the key set
+        const mayarApiKey = participant.event.organizer.mayarApiKey || process.env.MAYAR_API_KEY;
+
+        if (!mayarApiKey) {
+            return NextResponse.json(
+                { error: "Panitia belum mengatur integrasi pembayaran Mayar." },
                 { status: 400 }
             );
         }
@@ -78,6 +92,7 @@ export async function POST(
             redirectUrl: `${appUrl}/acara/${participant.event.slug}?payment=success`,
             customerName: participant.name,
             customerPhone: participant.phone || undefined,
+            mayarApiKey,
         });
 
         // Create or update payment record

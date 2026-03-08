@@ -9,15 +9,41 @@ datasource db {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  name         String
-  email        String   @unique
-  passwordHash String
-  events       Event[]
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id                 String    @id @default(cuid())
+  name               String
+  email              String    @unique
+  emailVerified      DateTime?
+  image              String?
+  passwordHash       String?
+  mayarApiKey        String?   @db.Text
+  mayarWebhookSecret String?   @db.Text
+  accounts           Account[]
+  events             Event[]
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
   @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+  @@map("accounts")
 }
 
 model Event {
@@ -28,7 +54,7 @@ model Event {
   budgetPerPerson Int
   status          EventStatus @default(OPEN)
   organizerId     String
-  organizer       User        @relation(fields: [organizerId], references: [id])
+  organizer       User        @relation(fields: [organizerId], references: [id], onDelete: Cascade)
   participants    Participant[]
   voteOptions     VoteOption[]
   createdAt       DateTime    @default(now())
@@ -53,7 +79,7 @@ model Participant {
   email     String?
   phone     String?
   eventId   String
-  event     Event    @relation(fields: [eventId], references: [id])
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
   votes     Vote[]
   payment   Payment?
   createdAt DateTime @default(now())
@@ -68,7 +94,7 @@ model VoteOption {
   type      VoteType
   label     String
   eventId   String
-  event     Event    @relation(fields: [eventId], references: [id])
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
   votes     Vote[]
   createdAt DateTime @default(now())
 
@@ -84,9 +110,9 @@ enum VoteType {
 model Vote {
   id            String      @id @default(cuid())
   participantId String
-  participant   Participant @relation(fields: [participantId], references: [id])
+  participant   Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
   voteOptionId  String
-  voteOption    VoteOption  @relation(fields: [voteOptionId], references: [id])
+  voteOption    VoteOption  @relation(fields: [voteOptionId], references: [id], onDelete: Cascade)
   createdAt     DateTime    @default(now())
 
   @@unique([participantId, voteOptionId])
@@ -102,7 +128,7 @@ model Payment {
   mayarCheckoutUrl   String?       @db.Text
   mayarTransactionId String?       @unique
   participantId      String        @unique
-  participant        Participant   @relation(fields: [participantId], references: [id])
+  participant        Participant   @relation(fields: [participantId], references: [id], onDelete: Cascade)
   paidAt             DateTime?
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt

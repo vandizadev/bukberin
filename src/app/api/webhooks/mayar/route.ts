@@ -4,20 +4,12 @@ import { verifyWebhookSignature } from "@/lib/mayar";
 
 export async function POST(req: NextRequest) {
     try {
-        const body = await req.text();
+        const bodyText = await req.text();
         const signature = req.headers.get("x-mayar-signature") || "";
-
-        if (!verifyWebhookSignature(body, signature)) {
-            console.warn("Webhook: invalid signature attempt");
-            return NextResponse.json(
-                { error: "Invalid signature" },
-                { status: 401 }
-            );
-        }
 
         let payload;
         try {
-            payload = JSON.parse(body);
+            payload = JSON.parse(bodyText);
         } catch {
             return NextResponse.json(
                 { error: "Invalid JSON body" },
@@ -35,9 +27,20 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        // Find payment before updating — handle missing record gracefully
+        // Find payment before verifying signature to get the organizer's webhook secret
         const existingPayment = await prisma.payment.findUnique({
             where: { mayarTransactionId: transactionId },
+            include: {
+                participant: {
+                    include: {
+                        event: {
+                            include: {
+                                organizer: true,
+                            },
+                        },
+                    },
+                },
+            },
         });
 
         if (!existingPayment) {
@@ -45,6 +48,18 @@ export async function POST(req: NextRequest) {
             return NextResponse.json(
                 { error: "Payment not found" },
                 { status: 404 }
+            );
+        }
+
+        // Use Organizer's Webhook Secret or fallback to Env Var
+        const webhookSecret = existingPayment.participant.event.organizer.mayarWebhookSecret || process.env.MAYAR_WEBHOOK_SECRET || "";
+
+        // Verify signature with correct secret
+        if (!verifyWebhookSignature(bodyText, signature, webhookSecret)) {
+            console.warn("Webhook: invalid signature attempt");
+            return NextResponse.json(
+                { error: "Invalid signature" },
+                { status: 401 }
             );
         }
 
